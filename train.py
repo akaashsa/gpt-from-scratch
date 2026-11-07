@@ -11,21 +11,21 @@ class Solution:
             # 1. Reproducible batch sampling per epoch
             torch.manual_seed(epoch)
 
-            # 2. Random start indices in valid range
+            # 2. Random start indices (must leave room for context + 1 target)
             ix = torch.randint(len(data) - context_length, (batch_size,))
 
-            # 3. Build X and Y (Y shifted right by 1)
+            # 3. Build X and Y (Y = X shifted right by 1)
             x = torch.stack([data[i:i + context_length] for i in ix])
             y = torch.stack([data[i + 1:i + 1 + context_length] for i in ix])
 
             # 4. Forward pass
-            logits = model(x)             # (B, T, C)
+            logits = model(x)              # (B, T, C)
             B, T, C = logits.shape
 
-            # 5-6. Reshape + cross entropy
+            # 5-6. Flatten & cross-entropy
             loss = F.cross_entropy(logits.view(B * T, C), y.view(B * T))
 
-            # 7. Backward + update
+            # 7. Backprop & update
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
